@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv) {
     // Define types
-    typedef itk::Image<double, 2> ImageType;
+    typedef itk::Image<double, 3> ImageType;
     typedef itk::ImageSeriesReader<ImageType> ReaderType;
     typedef itk::NumericSeriesFileNames NameGeneratorType;
 

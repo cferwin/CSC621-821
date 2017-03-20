@@ -24,6 +24,8 @@ int main(int argc, char **argv) {
     typedef itk::LinearInterpolateImageFunction<ImageType, double>  InterpolatorType;
     typedef itk::ImageRegistrationMethod<ImageType, ImageType>  RegistrationType;
     typedef itk::MutualInformationImageToImageMetric<ImageType, ImageType> MetricType;
+    typedef itk::NormalizeImageFilter<ImageType, ImageType> NormalizeType;
+    typedef itk::DiscreteGaussianImageFilter<ImageType, ImageType> GaussianFilterType;
     
     
     // Define variables
@@ -33,7 +35,11 @@ int main(int argc, char **argv) {
     InterpolatorType::Pointer interpolator = InterpolatorType::New();
     RegistrationType::Pointer registration = RegistrationType::New();
     MetricType::Pointer metric = MetricType::New();
-    
+    NormalizeType::Pointer baselineNormalize = NormalizeType::New();
+    NormalizeType::Pointer laterNormalize = NormalizeType::New();
+    GaussianFilterType::Pointer baselineGaussianFilter = GaussianFilterType::New();
+    GaussianFilterType::Pointer laterGaussianFilter = GaussianFilterType::New();
+
     
     // Accept input or display usage message
     if (argc != 7) {
@@ -81,16 +87,34 @@ int main(int argc, char **argv) {
     // Load slice image files into memory with series reader.
     laterReader->SetFileNames(filePaths);
     laterReader->Update();
+
+    //set up metric
+    metric->SetFixedImageStandardDeviation(0.4);
+    metric->SetMovingImageStandardDeviation(0.4);
+    
+    //set up normalize
+    baselineNormalize->SetInput(baselineReader->GetOutput());
+    laterNormalize->SetInput(laterReader->GetOutput());
+    
+    //set up GaussianFilter
+    baselineGaussianFilter->SetVariance(2.0);
+    laterGaussianFilter->SetVariance(2.0);
+    
+    baselineGaussianFilter->SetInput(baselineNormalize->GetOutput());
+    laterGaussianFilter->SetInput(laterNormalize->GetOutput());
+    
     
     // set up registration
     registration->SetOptimizer(optimizer);
     registration->SetTransform(transform);
     registration->SetMetric(metric);
     registration->SetInterpolator(interpolator);
+    registration->SetFixedImage(baselineGaussianFilter->GetOutput());
+    registration->SetFixedImage(laterGaussianFilter->GetOutput());
 
-    //set up metric
-    metric->SetFixedImageStandardDeviation(0.4);
-    metric->SetMovingImageStandardDeviation(0.4);
+    //update the normalize
+    baselineNormalize->Update();
+
     
 
 	return 0;

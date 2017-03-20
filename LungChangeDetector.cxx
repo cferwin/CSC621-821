@@ -4,15 +4,36 @@
 #include <itkImage.h>
 #include <itkImageSeriesReader.h>
 #include <itkNumericSeriesFileNames.h>
+#include <itkAffineTransform.h>
+#include <itkGradientDescentOptimizer.h>
+#include <itkMutualInformationImageToImageMetric.h>
+#include <itkDiscreteGaussianImageFilter.h>
+#include <itkImageRegistrationMethod.h>
+#include <itkNormalizeImageFilter.h>
+#include <itkResampleImageFilter.h>
+
+
 
 int main(int argc, char **argv) {
     // Define types
     typedef itk::Image<double, 3> ImageType;
     typedef itk::ImageSeriesReader<ImageType> ReaderType;
     typedef itk::NumericSeriesFileNames NameGeneratorType;
-
+    typedef itk::AffineTransform<double, 3> TransformType;
+    typedef itk::GradientDescentOptimizer   OptimizerType;
+    typedef itk::LinearInterpolateImageFunction<ImageType, double>  InterpolatorType;
+    typedef itk::ImageRegistrationMethod<ImageType, ImageType>  RegistrationType;
+    typedef itk::MutualInformationImageToImageMetric<ImageType, ImageType> MetricType;
+    
+    
     // Define variables
     NameGeneratorType::Pointer nameGenerator = NameGeneratorType::New();
+    TransformType::Pointer transform = TransformType::New();
+    OptimizerType::Pointer optimizer = OptimizerType::New();
+    InterpolatorType::Pointer interpolator = InterpolatorType::New();
+    RegistrationType::Pointer registration = RegistrationType::New();
+    MetricType::Pointer metric = MetricType::New();
+    
     
     // Accept input or display usage message
     if (argc != 7) {
@@ -60,8 +81,17 @@ int main(int argc, char **argv) {
     // Load slice image files into memory with series reader.
     laterReader->SetFileNames(filePaths);
     laterReader->Update();
+    
+    // set up registration
+    registration->SetOptimizer(optimizer);
+    registration->SetTransform(transform);
+    registration->SetMetric(metric);
+    registration->SetInterpolator(interpolator);
 
-
+    //set up metric
+    metric->SetFixedImageStandardDeviation(0.4);
+    metric->SetMovingImageStandardDeviation(0.4);
+    
 
 	return 0;
 }

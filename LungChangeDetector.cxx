@@ -110,8 +110,6 @@ int main(int argc, char **argv) {
 
     // Load slice image files into memory with series reader.
     baselineReader->SetFileNames(filePaths);
-    // TODO
-    //baselineReader->SetFileName(argv[1]);
     baselineReader->Update();
 
     // Import Later Series
@@ -127,27 +125,24 @@ int main(int argc, char **argv) {
 
     // Load slice image files into memory with series reader.
     laterReader->SetFileNames(filePaths);
-    // TODO
-    //laterReader->SetFileName(argv[4]);
     laterReader->Update();
 
-    //set up metric
+    // Set up metric
     metric->SetFixedImageStandardDeviation(0.4);
     metric->SetMovingImageStandardDeviation(0.4);
     
-    //set up normalize
+    // Set up normalize
     baselineNormalize->SetInput(baselineReader->GetOutput());
     laterNormalize->SetInput(laterReader->GetOutput());
     
-    //set up GaussianFilter
+    // Set up GaussianFilter
     baselineGaussianFilter->SetVariance(2.0);
     laterGaussianFilter->SetVariance(2.0);
     
     baselineGaussianFilter->SetInput(baselineNormalize->GetOutput());
     laterGaussianFilter->SetInput(laterNormalize->GetOutput());
     
-    
-    // set up registration
+    // Set up registration
     registration->SetOptimizer(optimizer);
     registration->SetTransform(transform);
     registration->SetMetric(metric);

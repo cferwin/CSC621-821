@@ -5,7 +5,7 @@
 #include <itkImageSeriesReader.h>
 #include <itkNumericSeriesFileNames.h>
 #include <itkAffineTransform.h>
-#include <itkGradientDescentOptimizer.h>
+#include <itkRegularStepGradientDescentOptimizer.h>
 #include <itkMutualInformationImageToImageMetric.h>
 #include <itkDiscreteGaussianImageFilter.h>
 #include <itkImageRegistrationMethod.h>
@@ -14,6 +14,7 @@
 #include <itkImageSeriesWriter.h>
 #include <itkCommand.h>
 #include <itkTranslationTransform.h>
+#include <itkCenteredTransformInitializer.h>
 
 class CommandIterationUpdate : public itk::Command {
 public:
@@ -26,7 +27,7 @@ protected:
     CommandIterationUpdate() {};
 
 public:
-    typedef itk::GradientDescentOptimizer OptimizerType;
+    typedef itk::RegularStepGradientDescentOptimizer OptimizerType;
     typedef const OptimizerType* OptimizerPointer;
 
     void Execute(itk::Object *caller, const itk::EventObject &event) ITK_OVERRIDE {
@@ -53,9 +54,8 @@ int main(int argc, char **argv) {
     typedef itk::Image<double, DIMENSION> ImageType;
     typedef itk::ImageSeriesReader<ImageType> ReaderType;
     typedef itk::NumericSeriesFileNames NameGeneratorType;
-    //typedef itk::AffineTransform<double, DIMENSION> TransformType;
-    typedef itk::TranslationTransform<double, DIMENSION> TransformType;
-    typedef itk::GradientDescentOptimizer   OptimizerType;
+    typedef itk::AffineTransform<double, DIMENSION> TransformType;
+    typedef itk::RegularStepGradientDescentOptimizer   OptimizerType;
     typedef itk::LinearInterpolateImageFunction<ImageType, double>  InterpolatorType;
     typedef itk::ImageRegistrationMethod<ImageType, ImageType>  RegistrationType;
     typedef itk::MutualInformationImageToImageMetric<ImageType, ImageType> MetricType;
@@ -64,6 +64,7 @@ int main(int argc, char **argv) {
     typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleFilterType;
     typedef itk::Image<unsigned char, OUT_DIMENSION> OutputImageType; // JPG writer only supports int and unsigned char
     typedef itk::ImageSeriesWriter<ImageType, OutputImageType> WriterType;
+    typedef itk::CenteredTransformInitializer<TransformType, ImageType, ImageType> TransformInitializerType;
     
     // Define variables
     NameGeneratorType::Pointer nameGenerator = NameGeneratorType::New();
@@ -76,13 +77,13 @@ int main(int argc, char **argv) {
     NormalizeType::Pointer laterNormalize = NormalizeType::New();
     GaussianFilterType::Pointer baselineGaussianFilter = GaussianFilterType::New();
     GaussianFilterType::Pointer laterGaussianFilter = GaussianFilterType::New();
+    TransformInitializerType::Pointer transformInitializer = TransformInitializerType::New();
     TransformType::Pointer finalTransform = TransformType::New();
     ResampleFilterType::Pointer resample = ResampleFilterType::New();
     WriterType::Pointer writer = WriterType::New();
     
     // Accept input or display usage message
     if (argc != 8) {
-        // TODO: UPDATE MESSAGE
         std::cout << "USAGE: " << std::endl;
         std::cout << "LungChangeDetector.exe <File Path Template for Set 1> <Start Index> <End Index> <File Path Template for Set 2> <Start Index> <End Index> <Output Path Template>" << std::endl;
         std::cout << "File Path Template X -- A standardized file name/path for each numbered image" << std::endl;
@@ -156,18 +157,20 @@ int main(int argc, char **argv) {
     registration->SetFixedImageRegion(baselineRegion);
 
     // Set up initial offset parameters
-    RegistrationType::ParametersType initialParameters(transform->GetNumberOfParameters());
-    initialParameters[0] = 0.0;
-    initialParameters[1] = 0.0;
-    initialParameters[2] = 0.0;
-
+    transformInitializer->SetTransform(transform);
+    transformInitializer->SetFixedImage(baselineReader->GetOutput());
+    transformInitializer->SetMovingImage(laterReader->GetOutput());
+    transformInitializer->MomentsOn();
+    transformInitializer->InitializeTransform();
+    registration->SetInitialTransformParameters(transform->GetParameters());
+    
     // Calculate and set the number of samples used
     const unsigned int numSamples = static_cast<unsigned int>(baselineRegion.GetNumberOfPixels() * 0.01);
     metric->SetNumberOfSpatialSamples(numSamples);
-    registration->SetInitialTransformParameters(initialParameters);
 
     // Set up optimizer
-    optimizer->SetLearningRate(15.0);
+    optimizer->SetMaximumStepLength(0.1);
+    optimizer->SetMinimumStepLength(0.01);
     optimizer->SetNumberOfIterations(200);
     optimizer->MaximizeOn();
 

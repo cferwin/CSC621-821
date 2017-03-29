@@ -16,38 +16,8 @@
 #include <itkTranslationTransform.h>
 #include <itkCenteredTransformInitializer.h>
 
-class CommandIterationUpdate : public itk::Command {
-public:
-    typedef CommandIterationUpdate Self;
-    typedef itk::Command Superclass;
-    typedef itk::SmartPointer<Self> Pointer;
-    itkNewMacro(Self);
-
-protected:
-    CommandIterationUpdate() {};
-
-public:
-    typedef itk::RegularStepGradientDescentOptimizer OptimizerType;
-    typedef const OptimizerType* OptimizerPointer;
-
-    void Execute(itk::Object *caller, const itk::EventObject &event) ITK_OVERRIDE {
-        Execute((const itk::Object*) caller, event);
-    }
-
-    void Execute(const itk::Object *object, const itk::EventObject &event) ITK_OVERRIDE {
-        OptimizerPointer optimizer = static_cast<OptimizerPointer>(object);
-        if (!itk::IterationEvent().CheckEvent(&event)) {
-            return;
-        }
-
-        std::cout << optimizer->GetCurrentIteration() << "   ";
-        std::cout << optimizer->GetValue() << "    ";
-        std::cout << optimizer->GetCurrentPosition() << std::endl;
-    }
-};
-
 #define DIMENSION 3
-#define OUT_DIMENSION 2
+#define OUT_DIMENSION 3
 
 int main(int argc, char **argv) {
     // Define types
@@ -62,7 +32,7 @@ int main(int argc, char **argv) {
     typedef itk::NormalizeImageFilter<ImageType, ImageType> NormalizeType;
     typedef itk::DiscreteGaussianImageFilter<ImageType, ImageType> GaussianFilterType;
     typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleFilterType;
-    typedef itk::Image<unsigned char, OUT_DIMENSION> OutputImageType; // JPG writer only supports int and unsigned char
+    typedef itk::Image<float, OUT_DIMENSION> OutputImageType;
     typedef itk::ImageSeriesWriter<ImageType, OutputImageType> WriterType;
     typedef itk::CenteredTransformInitializer<TransformType, ImageType, ImageType> TransformInitializerType;
     
@@ -173,10 +143,6 @@ int main(int argc, char **argv) {
     optimizer->SetMinimumStepLength(0.01);
     optimizer->SetNumberOfIterations(200);
     optimizer->MaximizeOn();
-
-    // Add observer
-    CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
-    optimizer->AddObserver(itk::IterationEvent(), observer);
     
     // Set up the stop condition and transforms
     try {
@@ -200,9 +166,11 @@ int main(int argc, char **argv) {
     resample->SetDefaultPixelValue(100);
 
     // Generate output file paths
+    // TODO: Can clean up if sticking with 3D output images
     nameGenerator->SetSeriesFormat(argv[7]);
     nameGenerator->SetStartIndex(1);
-    nameGenerator->SetEndIndex(std::stoi(argv[3]));
+    //nameGenerator->SetEndIndex(std::stoi(argv[3]));
+    nameGenerator->SetEndIndex(1);
     nameGenerator->SetIncrementIndex(1);
     filePaths = nameGenerator->GetFileNames();
 

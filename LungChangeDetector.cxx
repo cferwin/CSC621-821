@@ -15,6 +15,7 @@
 #include <itkCommand.h>
 #include <itkTranslationTransform.h>
 #include <itkCenteredTransformInitializer.h>
+#include <itkShrinkImageFilter.h>
 
 #define DIMENSION 3
 #define OUT_DIMENSION 3
@@ -98,13 +99,33 @@ int main(int argc, char **argv) {
     laterReader->SetFileNames(filePaths);
     laterReader->Update();
 
+    // Downsample the images to make registration faster
+    // TODO: Replace this with a resample filter to 128x128
+    typedef itk::ShrinkImageFilter<ImageType, ImageType> DownsampleType;
+    DownsampleType::Pointer downsampleBaseline = DownsampleType::New();
+    DownsampleType::Pointer downsampleLater = DownsampleType::New();
+
+    downsampleBaseline->SetInput(baselineReader->GetOutput());
+    downsampleBaseline->SetShrinkFactor(0, 4);
+    downsampleBaseline->SetShrinkFactor(1, 4);
+    downsampleBaseline->SetShrinkFactor(2, 4);
+    downsampleBaseline->Update();
+
+    downsampleLater->SetInput(laterReader->GetOutput());
+    downsampleLater->SetShrinkFactor(0, 4);
+    downsampleLater->SetShrinkFactor(1, 4);
+    downsampleLater->SetShrinkFactor(2, 4);
+    downsampleLater->Update();
+
     // Set up metric
     metric->SetFixedImageStandardDeviation(0.4);
     metric->SetMovingImageStandardDeviation(0.4);
     
     // Set up normalize
-    baselineNormalize->SetInput(baselineReader->GetOutput());
-    laterNormalize->SetInput(laterReader->GetOutput());
+    //baselineNormalize->SetInput(baselineReader->GetOutput());
+    baselineNormalize->SetInput(downsampleBaseline->GetOutput());
+    //laterNormalize->SetInput(laterReader->GetOutput());
+    laterNormalize->SetInput(downsampleLater->GetOutput());
     
     // Set up GaussianFilter
     baselineGaussianFilter->SetVariance(2.0);
@@ -177,7 +198,12 @@ int main(int argc, char **argv) {
     // Write output image
     writer->SetFileNames(filePaths);
     writer->SetInput(resample->GetOutput());
-    writer->Update();
+    try {
+        writer->Update();
+    }
+    catch (itk::ExceptionObject e) {
+        std::cout << e.GetDescription() << std::endl;
+    }
 
 	return 0;
 }

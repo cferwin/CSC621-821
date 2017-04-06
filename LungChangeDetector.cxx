@@ -1,3 +1,5 @@
+#include "RegisterOrganFilter.h"
+#include "RegisterOrganFilter.cxx"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -22,35 +24,15 @@
 
 int main(int argc, char **argv) {
     // Define types
-    typedef itk::Image<double, DIMENSION> ImageType;
+    typedef itk::Image<float, DIMENSION> ImageType;
     typedef itk::ImageSeriesReader<ImageType> ReaderType;
     typedef itk::NumericSeriesFileNames NameGeneratorType;
-    typedef itk::AffineTransform<double, DIMENSION> TransformType;
-    typedef itk::RegularStepGradientDescentOptimizer   OptimizerType;
-    typedef itk::LinearInterpolateImageFunction<ImageType, double>  InterpolatorType;
-    typedef itk::ImageRegistrationMethod<ImageType, ImageType>  RegistrationType;
-    typedef itk::MutualInformationImageToImageMetric<ImageType, ImageType> MetricType;
-    typedef itk::NormalizeImageFilter<ImageType, ImageType> NormalizeType;
-    typedef itk::DiscreteGaussianImageFilter<ImageType, ImageType> GaussianFilterType;
-    typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleFilterType;
     typedef itk::Image<float, OUT_DIMENSION> OutputImageType;
     typedef itk::ImageSeriesWriter<ImageType, OutputImageType> WriterType;
-    typedef itk::CenteredTransformInitializer<TransformType, ImageType, ImageType> TransformInitializerType;
+
     
     // Define variables
     NameGeneratorType::Pointer nameGenerator = NameGeneratorType::New();
-    TransformType::Pointer transform = TransformType::New();
-    OptimizerType::Pointer optimizer = OptimizerType::New();
-    InterpolatorType::Pointer interpolator = InterpolatorType::New();
-    RegistrationType::Pointer registration = RegistrationType::New();
-    MetricType::Pointer metric = MetricType::New();
-    NormalizeType::Pointer baselineNormalize = NormalizeType::New();
-    NormalizeType::Pointer laterNormalize = NormalizeType::New();
-    GaussianFilterType::Pointer baselineGaussianFilter = GaussianFilterType::New();
-    GaussianFilterType::Pointer laterGaussianFilter = GaussianFilterType::New();
-    TransformInitializerType::Pointer transformInitializer = TransformInitializerType::New();
-    TransformType::Pointer finalTransform = TransformType::New();
-    ResampleFilterType::Pointer resample = ResampleFilterType::New();
     WriterType::Pointer writer = WriterType::New();
     
     // Accept input or display usage message
@@ -99,92 +81,7 @@ int main(int argc, char **argv) {
     laterReader->SetFileNames(filePaths);
     laterReader->Update();
 
-    // Downsample the images to make registration faster
-    // TODO: Replace this with a resample filter to 128x128
-    typedef itk::ShrinkImageFilter<ImageType, ImageType> DownsampleType;
-    DownsampleType::Pointer downsampleBaseline = DownsampleType::New();
-    DownsampleType::Pointer downsampleLater = DownsampleType::New();
-
-    downsampleBaseline->SetInput(baselineReader->GetOutput());
-    downsampleBaseline->SetShrinkFactor(0, 4);
-    downsampleBaseline->SetShrinkFactor(1, 4);
-    downsampleBaseline->SetShrinkFactor(2, 4);
-    downsampleBaseline->Update();
-
-    downsampleLater->SetInput(laterReader->GetOutput());
-    downsampleLater->SetShrinkFactor(0, 4);
-    downsampleLater->SetShrinkFactor(1, 4);
-    downsampleLater->SetShrinkFactor(2, 4);
-    downsampleLater->Update();
-
-    // Set up metric
-    metric->SetFixedImageStandardDeviation(0.4);
-    metric->SetMovingImageStandardDeviation(0.4);
     
-    // Set up normalize
-    //baselineNormalize->SetInput(baselineReader->GetOutput());
-    baselineNormalize->SetInput(downsampleBaseline->GetOutput());
-    //laterNormalize->SetInput(laterReader->GetOutput());
-    laterNormalize->SetInput(downsampleLater->GetOutput());
-    
-    // Set up GaussianFilter
-    baselineGaussianFilter->SetVariance(2.0);
-    laterGaussianFilter->SetVariance(2.0);
-    
-    baselineGaussianFilter->SetInput(baselineNormalize->GetOutput());
-    laterGaussianFilter->SetInput(laterNormalize->GetOutput());
-    
-    // Set up registration
-    registration->SetOptimizer(optimizer);
-    registration->SetTransform(transform);
-    registration->SetMetric(metric);
-    registration->SetInterpolator(interpolator);
-    registration->SetFixedImage(baselineGaussianFilter->GetOutput());
-    registration->SetMovingImage(laterGaussianFilter->GetOutput());
-
-    // Set up baseline region
-    baselineNormalize->Update();
-    ImageType::RegionType baselineRegion = baselineNormalize->GetOutput()->GetBufferedRegion();
-    registration->SetFixedImageRegion(baselineRegion);
-
-    // Set up initial offset parameters
-    transformInitializer->SetTransform(transform);
-    transformInitializer->SetFixedImage(baselineReader->GetOutput());
-    transformInitializer->SetMovingImage(laterReader->GetOutput());
-    transformInitializer->MomentsOn();
-    transformInitializer->InitializeTransform();
-    registration->SetInitialTransformParameters(transform->GetParameters());
-    
-    // Calculate and set the number of samples used
-    const unsigned int numSamples = static_cast<unsigned int>(baselineRegion.GetNumberOfPixels() * 0.01);
-    metric->SetNumberOfSpatialSamples(numSamples);
-
-    // Set up optimizer
-    optimizer->SetMaximumStepLength(0.1);
-    optimizer->SetMinimumStepLength(0.01);
-    optimizer->SetNumberOfIterations(200);
-    optimizer->MaximizeOn();
-    
-    // Set up the stop condition and transforms
-    try {
-        registration->Update();
-    }
-    catch (itk::ExceptionObject e) {
-        std::cout << e.GetDescription() << std::endl;
-    }
-    RegistrationType::ParametersType finalParameters = registration->GetLastTransformParameters();
-    finalTransform->SetParameters(finalParameters);
-    finalTransform->SetFixedParameters(transform->GetFixedParameters());
-
-    // Resample
-    ImageType::Pointer baseline = baselineReader->GetOutput();
-    resample->SetTransform(finalTransform);
-    resample->SetInput(laterReader->GetOutput());
-    resample->SetSize(baseline->GetLargestPossibleRegion().GetSize());
-    resample->SetOutputOrigin(baseline->GetOrigin());
-    resample->SetOutputSpacing(baseline->GetSpacing());
-    resample->SetOutputDirection(baseline->GetDirection());
-    resample->SetDefaultPixelValue(100);
 
     // Generate output file paths
     // TODO: Can clean up if sticking with 3D output images
@@ -195,9 +92,14 @@ int main(int argc, char **argv) {
     nameGenerator->SetIncrementIndex(1);
     filePaths = nameGenerator->GetFileNames();
 
+    RegisterOrganFilter<ImageType, OutputImageType>::Pointer reg = RegisterOrganFilter<ImageType, OutputImageType>::New();
+    reg->SetFixedImage(baselineReader->GetOutput());
+    reg->SetMovingImage(laterReader->GetOutput());
+    reg->Update();
+
     // Write output image
     writer->SetFileNames(filePaths);
-    writer->SetInput(resample->GetOutput());
+    writer->SetInput(reg->GetOutput());
     try {
         writer->Update();
     }

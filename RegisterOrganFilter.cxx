@@ -18,63 +18,18 @@ RegisterOrganFilter<TInputImage, TOutputImage>::RegisterOrganFilter()
     finalTransform = TransformType::New();
     resample = ResampleFilterType::New();
 
-    //downsampleBaseline->SetInput(baselineReader->GetOutput());
+    // Set up downsampling
     downsampleBaseline->SetShrinkFactor(0, 4);
     downsampleBaseline->SetShrinkFactor(1, 4);
     downsampleBaseline->SetShrinkFactor(2, 4);
-    //downsampleBaseline->Update();
 
-    //downsampleLater->SetInput(laterReader->GetOutput());
     downsampleLater->SetShrinkFactor(0, 4);
     downsampleLater->SetShrinkFactor(1, 4);
     downsampleLater->SetShrinkFactor(2, 4);
-    //downsampleLater->Update();
 
     // Set up metric
     metric->SetFixedImageStandardDeviation(0.4);
     metric->SetMovingImageStandardDeviation(0.4);
-
-    /*
-    // Set up normalize
-    baselineNormalize->SetInput(downsampleBaseline->GetOutput());
-    laterNormalize->SetInput(downsampleLater->GetOutput());
-
-    // Set up GaussianFilter
-    baselineGaussianFilter->SetVariance(2.0);
-    laterGaussianFilter->SetVariance(2.0);
-
-    baselineGaussianFilter->SetInput(baselineNormalize->GetOutput());
-    laterGaussianFilter->SetInput(laterNormalize->GetOutput());
-
-    // Set up registration
-    registration->SetOptimizer(optimizer);
-    registration->SetTransform(transform);
-    registration->SetMetric(metric);
-    registration->SetInterpolator(interpolator);
-    registration->SetFixedImage(baselineGaussianFilter->GetOutput());
-    registration->SetMovingImage(laterGaussianFilter->GetOutput());
-    */
-
-    // Set up baseline region
-    /*
-    //baselineNormalize->Update();
-    ImageType::RegionType baselineRegion = baselineNormalize->GetOutput()->GetBufferedRegion();
-    registration->SetFixedImageRegion(baselineRegion);
-    */
-
-    // Set up initial offset parameters
-    /*
-    transformInitializer->SetTransform(transform);
-    //transformInitializer->SetFixedImage(baselineReader->GetOutput());
-    //transformInitializer->SetMovingImage(laterReader->GetOutput());
-    transformInitializer->MomentsOn();
-    //transformInitializer->InitializeTransform();
-    registration->SetInitialTransformParameters(transform->GetParameters());
-
-    // Calculate and set the number of samples used
-    const unsigned int numSamples = static_cast<unsigned int>(baselineRegion.GetNumberOfPixels() * 0.01);
-    metric->SetNumberOfSpatialSamples(numSamples);
-    */
 
     // Set up optimizer
     optimizer->SetMaximumStepLength(0.1);
@@ -82,27 +37,7 @@ RegisterOrganFilter<TInputImage, TOutputImage>::RegisterOrganFilter()
     optimizer->SetNumberOfIterations(200);
     optimizer->MaximizeOn();
 
-    // Set up the stop condition and transforms
-    try {
-        //registration->Update();
-    }
-    catch (itk::ExceptionObject e) {
-        std::cout << e.GetDescription() << std::endl;
-    }
-    /*
-    RegistrationType::ParametersType finalParameters = registration->GetLastTransformParameters();
-    finalTransform->SetParameters(finalParameters);
-    finalTransform->SetFixedParameters(transform->GetFixedParameters());
-    */
-
-    // Resample
-    //ImageType::Pointer baseline = baselineReader->GetOutput();
-    //resample->SetTransform(finalTransform);
-    //resample->SetInput(laterReader->GetOutput());
-    //resample->SetSize(baseline->GetLargestPossibleRegion().GetSize());
-    //resample->SetOutputOrigin(baseline->GetOrigin());
-    //resample->SetOutputSpacing(baseline->GetSpacing());
-    //resample->SetOutputDirection(baseline->GetDirection());
+   
     resample->SetDefaultPixelValue(100);
 }
 
@@ -151,7 +86,6 @@ void RegisterOrganFilter<TInputImage, TOutputImage>::GenerateData() {
     registration->SetMovingImage(laterGaussianFilter->GetOutput());
 
     // Set up baseline region
-    //baselineNormalize->Update();
     ImageType::RegionType baselineRegion = baselineNormalize->GetOutput()->GetBufferedRegion();
     registration->SetFixedImageRegion(baselineRegion);
     
@@ -166,8 +100,6 @@ void RegisterOrganFilter<TInputImage, TOutputImage>::GenerateData() {
     // Calculate and set the number of samples used
     const unsigned int numSamples = static_cast<unsigned int>(baselineRegion.GetNumberOfPixels() * 0.01);
     metric->SetNumberOfSpatialSamples(numSamples);
-
-    transformInitializer->InitializeTransform();
     registration->Update();
 
     // Final transform
@@ -182,6 +114,7 @@ void RegisterOrganFilter<TInputImage, TOutputImage>::GenerateData() {
     resample->SetOutputOrigin(this->GetFixedImage()->GetOrigin());
     resample->SetOutputSpacing(this->GetFixedImage()->GetSpacing());
     resample->SetOutputDirection(this->GetFixedImage()->GetDirection());
+
     // Graft outputs at end of the pipeline
     resample->GraftOutput(this->GetOutput());
     resample->Update();

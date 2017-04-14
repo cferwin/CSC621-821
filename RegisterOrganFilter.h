@@ -35,8 +35,6 @@ public:
     typedef typename ImageType::PixelType PixelType;
 
     itkNewMacro(Self);
-    //itkGetMacro(Threshold, PixelType);
-    //itkSetMacro(Threshold, PixelType);
 
     RegisterOrganFilter();
     ~RegisterOrganFilter();

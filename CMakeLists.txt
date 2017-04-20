@@ -30,7 +30,7 @@ if (ITKVtkGlue_LOADED)
   include(${VTK_USE_FILE})
 endif()
  
-add_executable(SegmentLungs MACOSX_BUNDLE SegmentLungs)
+add_executable(SegmentLungs MACOSX_BUNDLE SegmentLungs CompositeLung)
  
 if( "${ITK_VERSION_MAJOR}" LESS 4 )
   target_link_libraries(SegmentLungs ITKReview ${ITK_LIBRARIES})

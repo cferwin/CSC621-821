@@ -2,8 +2,11 @@
 
 template <typename TInputImage, typename TOutputImage>
 CompositeLung<TInputImage, TOutputImage>::CompositeLung() {
-	gaussianFilter = filterType::New();
+	gaussianFilter = FilterType::New();
 	thresholdFilter = ThresholdImageFilterType::New();
+	invertFilter = InvertFilterType::New();
+	openingFilter = OpeningFilterType::New();
+	closingFilter = ClosingFilterType::New();
 }
 
 template <typename TInputImage, typename TOutputImage> 
@@ -17,21 +20,39 @@ void CompositeLung<TInputImage, TOutputImage>::GenerateData() {
 	img->Graft(this->GetInput());
 
 	// Create and setup a Gaussian filter
-	filterType::Pointer gaussianFilter = filterType::New();
+	
 	gaussianFilter->SetInput(img);
 	gaussianFilter->SetVariance(this->GetVariance());
 
 	// Threshold 
-	typedef itk::ThresholdImageFilter <TOutputImage> ThresholdImageFilterType;
-	ThresholdImageFilterType::Pointer thresholdFilter = ThresholdImageFilterType::New();
-	thresholdFilter->SetInput(gaussianFilter->GetOutput());
-	thresholdFilter->ThresholdBelow(this->GetThreshold());
+	thresholdFilter->SetInput(img);
+	thresholdFilter->SetLowerThreshold(0);
+	thresholdFilter->SetUpperThreshold(this->GetThreshold());
 	thresholdFilter->SetOutsideValue(0);
-
-	thresholdFilter->GraftOutput(this->GetOutput());
 	thresholdFilter->Update();
 
-	this->GraftOutput(thresholdFilter->GetOutput());
+	//Structuring
+	structureFilter.SetRadius(3);
+	structureFilter.CreateStructuringElement();
+
+	// Closing
+	closingFilter->SetInput(thresholdFilter->GetOutput());
+	closingFilter->SetKernel(structureFilter);
+
+	// Opening
+	openingFilter->SetInput(closingFilter->GetOutput());
+	openingFilter->SetKernel(structureFilter);
+	openingFilter->Update();
+
+	// Invert 
+	invertFilter->SetInput(openingFilter->GetOutput());
+	invertFilter->SetMaximum(65535);
+	
+	//thresholdFilter->GraftOutput(this->GetOutput());
+	//thresholdFilter->Update();
+	invertFilter->GraftOutput(this->GetOutput());
+	invertFilter->Update();
+	this->GraftOutput(invertFilter->GetOutput());
 
 
 

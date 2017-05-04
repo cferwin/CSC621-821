@@ -12,6 +12,7 @@ int main(int argc, char *argv[]) {
 	std::string inputFilename = argv[1];
 	int threshold = 50;
 	double variance = 2.0;
+	int invert = 255;
 	if (argc > 2)
 	{
 		variance = atof(argv[2]);
@@ -22,22 +23,24 @@ int main(int argc, char *argv[]) {
 	typedef itk::Image< unsigned char, 2 > UnsignedCharImageType;
 	typedef itk::Image< float, 2 >         FloatImageType;
 
-	typedef itk::ImageFileReader< UnsignedCharImageType >  readerType;
+	typedef itk::ImageFileReader< FloatImageType >  readerType;
 
-	typedef itk::DiscreteGaussianImageFilter<UnsignedCharImageType, FloatImageType >  filterType;
+	typedef itk::DiscreteGaussianImageFilter<FloatImageType, FloatImageType >  filterType;
 
 	// Create and setup a reader
 	readerType::Pointer reader = readerType::New();
 	reader->SetFileName(argv[1]);
 
-	CompositeLung<UnsignedCharImageType, FloatImageType>::Pointer comp = CompositeLung<UnsignedCharImageType, FloatImageType>::New();
+	CompositeLung<FloatImageType, FloatImageType>::Pointer comp = CompositeLung<FloatImageType, FloatImageType>::New();
 	comp->SetInput(reader->GetOutput());
 	comp->SetThreshold(threshold);
 	comp->SetVariance(variance);
+	comp->Update();
+	
 
 	// Display
 	QuickView viewer;
-	viewer.AddImage<UnsignedCharImageType>(reader->GetOutput());
+	viewer.AddImage<FloatImageType>(reader->GetOutput());
 	viewer.AddImage<FloatImageType>(comp->GetOutput());
 	viewer.Visualize();
 	

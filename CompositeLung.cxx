@@ -20,18 +20,17 @@ void CompositeLung<TInputImage, TOutputImage>::GenerateData() {
 	img->Graft(this->GetInput());
 
 	// Create and setup a Gaussian filter
-	
 	gaussianFilter->SetInput(img);
 	gaussianFilter->SetVariance(this->GetVariance());
 
-	// Threshold 
+	// Threshold
 	thresholdFilter->SetInput(img);
 	thresholdFilter->SetLowerThreshold(0);
 	thresholdFilter->SetUpperThreshold(this->GetThreshold());
 	thresholdFilter->SetOutsideValue(0);
 	thresholdFilter->Update();
 
-	//Structuring
+	// Structuring
 	structureFilter.SetRadius(3);
 	structureFilter.CreateStructuringElement();
 
@@ -44,17 +43,11 @@ void CompositeLung<TInputImage, TOutputImage>::GenerateData() {
 	openingFilter->SetKernel(structureFilter);
 	openingFilter->Update();
 
-	// Invert 
+	// Invert
 	invertFilter->SetInput(openingFilter->GetOutput());
-	invertFilter->SetMaximum(65535);
+	invertFilter->SetMaximum(255);
 	
-	//thresholdFilter->GraftOutput(this->GetOutput());
-	//thresholdFilter->Update();
 	invertFilter->GraftOutput(this->GetOutput());
 	invertFilter->Update();
 	this->GraftOutput(invertFilter->GetOutput());
-
-
-
-
 }

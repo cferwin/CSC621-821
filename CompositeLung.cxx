@@ -7,6 +7,8 @@ CompositeLung<TInputImage, TOutputImage>::CompositeLung() {
 	invertFilter = InvertFilterType::New();
 	openingFilter = OpeningFilterType::New();
 	closingFilter = ClosingFilterType::New();
+	componentFilter = ComponentFilterType::New();
+	rgbFilter = RGBFilterType::New();
 }
 
 template <typename TInputImage, typename TOutputImage> 
@@ -46,8 +48,22 @@ void CompositeLung<TInputImage, TOutputImage>::GenerateData() {
 	// Invert
 	invertFilter->SetInput(openingFilter->GetOutput());
 	invertFilter->SetMaximum(255);
-	
+
+	// Connected Component
+	componentFilter->SetInput(invertFilter->GetOutput());
+	componentFilter->Update();
+	componentFilter->GetObjectCount(2);
+
+	// Label
+	rgbFilter->SetInput(componentFilter->GetOutput());
+
+	rgbFilter->GraftOutput(this->GetOutput());
+	rgbFilter->Update();
+	this->GraftOutput(rgbFilter->GetOutput());
+
+	/**
 	invertFilter->GraftOutput(this->GetOutput());
 	invertFilter->Update();
 	this->GraftOutput(invertFilter->GetOutput());
+	*/
 }

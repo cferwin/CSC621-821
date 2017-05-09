@@ -7,6 +7,8 @@
 #include "itkBinaryMorphologicalOpeningImageFilter.h"
 #include "itkBinaryMorphologicalClosingImageFilter.h"
 #include "itkBinaryBallStructuringElement.h"
+#include "itkConnectedComponentImageFilter.h"
+#include "itkLabelToRGBImageFilter.h"
 #include "QuickView.h"
 
 template<typename TInputImage, typename TOutputImage> 
@@ -22,7 +24,6 @@ public:
 	itkSetMacro(Threshold, int);
 	itkSetMacro(Variance, float);
 	itkGetMacro(Threshold, int);
-
 	itkGetMacro(Variance, float);
 
 	CompositeLung();
@@ -40,12 +41,16 @@ protected:
 	typedef itk::BinaryBallStructuringElement<PixelType, 2> StructureFilterType;
 	typedef itk::BinaryMorphologicalOpeningImageFilter<TInputImage, TOutputImage, StructureFilterType> OpeningFilterType;
 	typedef itk::BinaryMorphologicalClosingImageFilter<TInputImage, TOutputImage, StructureFilterType> ClosingFilterType;
+	typedef itk::ConnectedComponentImageFilter<TInputImage, TOutputImage> ComponentFilterType;
+	typedef itk::LabelToRGBImageFilter<TInputImage, TOutputImage> RGBFilterType;
 	
 	typedef typename FilterType::Pointer FilterTypePointer;
 	typedef typename ThresholdImageFilterType::Pointer ThresholdImageFilterTypePointer;
 	typedef typename InvertFilterType::Pointer InvertIntensityImageFilterPointer;
 	typedef typename OpeningFilterType::Pointer OpeningFilterPointer;
 	typedef typename ClosingFilterType::Pointer ClosingFilterPointer;
+	typedef typename ComponentFilterType::Pointer ComponentFilterPointer;
+	typedef typename RGBFilterType::Pointer RGBFilterPointer;
 	
 private:
 	FilterTypePointer gaussianFilter;
@@ -54,6 +59,8 @@ private:
 	OpeningFilterPointer openingFilter;
 	ClosingFilterPointer closingFilter;
 	StructureFilterType structureFilter;
+	ComponentFilterPointer componentFilter;
+	RGBFilterPointer rgbFilter;
 	int m_Threshold;
 	float m_Variance;
 	int m_invert;

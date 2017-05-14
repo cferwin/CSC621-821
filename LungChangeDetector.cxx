@@ -1,5 +1,7 @@
 #include "RegisterOrganFilter.h"
 #include "RegisterOrganFilter.cxx"
+#include "NonlinearRegisterOrganFilter.h"
+#include "NonlinearRegisterOrganFilter.cxx"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -92,15 +94,23 @@ int main(int argc, char **argv) {
     nameGenerator->SetIncrementIndex(1);
     filePaths = nameGenerator->GetFileNames();
 
-    RegisterOrganFilter<ImageType, OutputImageType>::Pointer reg = RegisterOrganFilter<ImageType, OutputImageType>::New();
-    reg->SetFixedImage(baselineReader->GetOutput());
-    reg->SetMovingImage(laterReader->GetOutput());
-    reg->Update();
-
-    // Write output image
-    writer->SetFileNames(filePaths);
-    writer->SetInput(reg->GetOutput());
     try {
+        RegisterOrganFilter<ImageType, OutputImageType>::Pointer reg = RegisterOrganFilter<ImageType, OutputImageType>::New();
+        reg->SetFixedImage(baselineReader->GetOutput());
+        reg->SetMovingImage(laterReader->GetOutput());
+        reg->Update();
+
+        NonlinearRegisterOrganFilter<ImageType, OutputImageType>::Pointer nonlinearReg = NonlinearRegisterOrganFilter<ImageType, OutputImageType>::New();
+        nonlinearReg->SetFixedImage(baselineReader->GetOutput());
+        nonlinearReg->SetMovingImage(reg->GetOutput());
+        std::cout << "start nonlinear update" << std::endl;
+        nonlinearReg->Update();
+        std::cout << "nonlinear update done, start writer" << std::endl;
+
+        // Write output image
+        writer->SetFileNames(filePaths);
+        writer->SetInput(nonlinearReg->GetOutput());
+        std::cout << "writer set up" << std::endl;
         writer->Update();
     }
     catch (itk::ExceptionObject e) {

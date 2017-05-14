@@ -34,7 +34,7 @@ RegisterOrganFilter<TInputImage, TOutputImage>::RegisterOrganFilter()
     // Set up optimizer
     optimizer->SetMaximumStepLength(0.1);
     optimizer->SetMinimumStepLength(0.01);
-    optimizer->SetNumberOfIterations(200);
+    optimizer->SetNumberOfIterations(500);
     optimizer->MaximizeOn();
 
    

@@ -14,6 +14,6 @@ ELSE()
     SET(Glue ItkVtkGlue)
 ENDIF()
 
-ADD_EXECUTABLE(LungChangeDetector LungChangeDetector.cxx RegisterOrganFilter.cxx)
+ADD_EXECUTABLE(LungChangeDetector LungChangeDetector.cxx RegisterOrganFilter.cxx NonlinearRegisterOrganFilter.cxx)
 
 TARGET_LINK_LIBRARIES(LungChangeDetector ${ITK_LIBRARIES} ${VTK_LIBRARIES} ${Glue})

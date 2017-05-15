@@ -1,5 +1,5 @@
-#include "CompositeLung.cxx"
-#include "CompositeLung.h"
+#include "SegmentLungVolume.cxx"
+#include "SegmentLungVolume.h"
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkDiscreteGaussianImageFilter.h"
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 	readerType::Pointer reader = readerType::New();
 	reader->SetFileName(argv[1]);
 
-	CompositeLung<FloatImageType, FloatImageType>::Pointer comp = CompositeLung<FloatImageType, FloatImageType>::New();
+	SegmentLungVolume<FloatImageType, FloatImageType>::Pointer comp = SegmentLungVolume<FloatImageType, FloatImageType>::New();
 	comp->SetInput(reader->GetOutput());
 	comp->SetThreshold(threshold);
 	comp->SetVariance(variance);

@@ -35,7 +35,7 @@ ELSE()
     SET(Glue ItkVtkGlue)
 ENDIF()
  
-add_executable(SegmentLungs MACOSX_BUNDLE SegmentLungs CompositeLung)
+add_executable(SegmentLungs MACOSX_BUNDLE SegmentLungs SegmentLungVolume)
  
 if( "${ITK_VERSION_MAJOR}" LESS 4 )
     target_link_libraries(SegmentLungs ITKReview ${ITK_LIBRARIES} ${VTK_LIBRARIES} ${Glue})

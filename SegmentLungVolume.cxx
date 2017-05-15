@@ -1,7 +1,7 @@
-#include "CompositeLung.h"
+#include "SegmentLungVolume.h"
 
 template <typename TInputImage, typename TOutputImage>
-CompositeLung<TInputImage, TOutputImage>::CompositeLung() {
+SegmentLungVolume<TInputImage, TOutputImage>::SegmentLungVolume() {
 	gaussianFilter = FilterType::New();
 	thresholdFilter = ThresholdImageFilterType::New();
 	invertFilter = InvertFilterType::New();
@@ -10,11 +10,11 @@ CompositeLung<TInputImage, TOutputImage>::CompositeLung() {
 }
 
 template <typename TInputImage, typename TOutputImage> 
-CompositeLung<TInputImage, TOutputImage>::~CompositeLung() {
+SegmentLungVolume<TInputImage, TOutputImage>::~SegmentLungVolume() {
 }
 
 template <typename TInputImage, typename TOutputImage> 
-void CompositeLung<TInputImage, TOutputImage>::GenerateData() {
+void SegmentLungVolume<TInputImage, TOutputImage>::GenerateData() {
 	typename ImageType::Pointer img = ImageType::New();
 	img->Graft(this->GetInput());
 

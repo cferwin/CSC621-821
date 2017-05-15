@@ -10,9 +10,9 @@
 #include "QuickView.h"
 
 template<typename TInputImage, typename TOutputImage> 
-class CompositeLung : public itk::ImageToImageFilter<TInputImage, TOutputImage> {
+class SegmentLungVolume : public itk::ImageToImageFilter<TInputImage, TOutputImage> {
 public: 
-	typedef CompositeLung <TInputImage, TOutputImage> Self;
+	typedef SegmentLungVolume <TInputImage, TOutputImage> Self;
 	typedef itk::ImageToImageFilter<TInputImage, TOutputImage> SuperClass;
 	typedef itk::SmartPointer<Self> Pointer;
 	typedef itk::SmartPointer<const Self> ConstPoint;
@@ -24,8 +24,8 @@ public:
 	itkGetMacro(Threshold, int);
 	itkGetMacro(Variance, float);
 
-	CompositeLung();
-	~CompositeLung();
+	SegmentLungVolume();
+	~SegmentLungVolume();
 
 	void GenerateData();
 	
@@ -57,6 +57,4 @@ private:
 	int m_Threshold;
 	float m_Variance;
 	int m_invert;
-
-
 };

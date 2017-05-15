@@ -5,7 +5,7 @@
 #include "itkDiscreteGaussianImageFilter.h"
 #include "itkThresholdImageFilter.h"
 #include "QuickView.h"
-
+#include "itkMaskImageFilter.h"
 
 int main(int argc, char *argv[]) {
 	// Parse command line argumentsa
@@ -31,17 +31,25 @@ int main(int argc, char *argv[]) {
 	readerType::Pointer reader = readerType::New();
 	reader->SetFileName(argv[1]);
 
+    typedef itk::RGBPixel<unsigned char> RGBPixelType;
+    typedef itk::Image<RGBPixelType, 2> RGBImageType;
 	CompositeLung<FloatImageType, FloatImageType>::Pointer comp = CompositeLung<FloatImageType, FloatImageType>::New();
 	comp->SetInput(reader->GetOutput());
 	comp->SetThreshold(threshold);
 	comp->SetVariance(variance);
 	comp->Update();
 	
+    itk::MaskImageFilter<FloatImageType, FloatImageType>::Pointer mask = itk::MaskImageFilter<FloatImageType, FloatImageType>::New();
+    mask->SetMaskImage(comp->GetOutput());
+    mask->SetInput(reader->GetOutput());
+    mask->Update();
 
 	// Display
 	QuickView viewer;
 	viewer.AddImage<FloatImageType>(reader->GetOutput());
-	viewer.AddImage<FloatImageType>(comp->GetOutput());
+	viewer.AddImage<FloatImageType>(mask->GetOutput());
+	//viewer.AddImage(reader->GetOutput());
+	//viewer.AddRGBImage(comp->GetOutput());
 	viewer.Visualize();
 	
 	return EXIT_SUCCESS;

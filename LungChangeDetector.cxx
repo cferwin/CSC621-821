@@ -23,6 +23,7 @@
 #include "SegmentLungVolume.h"
 #include "SegmentLungVolume.cxx"
 #include <itkMaskImageFilter.h>
+#include <itkSubtractImageFilter.h>
 
 #define DIMENSION 3
 #define OUT_DIMENSION 3
@@ -91,6 +92,18 @@ int main(int argc, char **argv) {
     laterReader->Update();
 
     try {
+        RegisterOrganFilter<ImageType, OutputImageType>::Pointer reg = RegisterOrganFilter<ImageType, OutputImageType>::New();
+        reg->SetFixedImage(baselineReader->GetOutput());
+        reg->SetMovingImage(laterReader->GetOutput());
+        reg->Update();
+
+        NonlinearRegisterOrganFilter<ImageType, OutputImageType>::Pointer nonlinearReg = NonlinearRegisterOrganFilter<ImageType, OutputImageType>::New();
+        nonlinearReg->SetFixedImage(baselineReader->GetOutput());
+        nonlinearReg->SetMovingImage(reg->GetOutput());
+        std::cout << "start nonlinear update" << std::endl;
+        nonlinearReg->Update();
+        std::cout << "nonlinear update done, start masking" << std::endl;
+
         // Segment the lungs in both images
         SegmentLungVolume<ImageType, ImageType>::Pointer segBaseline = SegmentLungVolume<ImageType, ImageType>::New();
         segBaseline->SetInput(baselineReader->GetOutput());
@@ -99,7 +112,7 @@ int main(int argc, char **argv) {
         segBaseline->Update();
 
         SegmentLungVolume<ImageType, ImageType>::Pointer segLater = SegmentLungVolume<ImageType, ImageType>::New();
-        segLater->SetInput(laterReader->GetOutput());
+        segLater->SetInput(nonlinearReg->GetOutput());
         segLater->SetThreshold(threshold);
         segLater->SetVariance(variance);
         segLater->Update();
@@ -114,21 +127,14 @@ int main(int argc, char **argv) {
         // Mask lungs in each image
         itk::MaskImageFilter<ImageType, ImageType, ImageType>::Pointer maskLater = itk::MaskImageFilter<ImageType, ImageType, ImageType>::New();
         maskLater->SetMaskImage(segLater->GetOutput());
-        maskLater->SetInput(laterReader->GetOutput());
+        maskLater->SetInput(nonlinearReg->GetOutput());
         maskLater->SetMaskingValue(0);
         maskLater->Update();
 
-        RegisterOrganFilter<ImageType, OutputImageType>::Pointer reg = RegisterOrganFilter<ImageType, OutputImageType>::New();
-        reg->SetFixedImage(maskBaseline->GetOutput());
-        reg->SetMovingImage(maskLater->GetOutput());
-        reg->Update();
-
-        NonlinearRegisterOrganFilter<ImageType, OutputImageType>::Pointer nonlinearReg = NonlinearRegisterOrganFilter<ImageType, OutputImageType>::New();
-        nonlinearReg->SetFixedImage(maskBaseline->GetOutput());
-        nonlinearReg->SetMovingImage(reg->GetOutput());
-        std::cout << "start nonlinear update" << std::endl;
-        nonlinearReg->Update();
-        std::cout << "nonlinear update done, start writer" << std::endl;
+        itk::SubtractImageFilter<ImageType, ImageType>::Pointer subtract = itk::SubtractImageFilter<ImageType, ImageType>::New();
+        subtract->SetInput1(maskBaseline->GetOutput());
+        subtract->SetInput2(maskLater->GetOutput());
+        subtract->Update();
 
         // Generate output file paths
         // TODO: Can clean up if sticking with 3D output images
@@ -141,7 +147,7 @@ int main(int argc, char **argv) {
 
         // Write output image
         writer->SetFileNames(filePaths);
-        writer->SetInput(maskLater->GetOutput());
+        writer->SetInput(subtract->GetOutput());
         std::cout << "writer set up" << std::endl;
         writer->Update();
     }

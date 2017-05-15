@@ -34,12 +34,12 @@ protected:
 	typedef itk::Image< unsigned char, 2 > UnsignedCharImageType;
 	typedef itk::Image< float, 2 >         FloatImageType;
 	
-	typedef itk::DiscreteGaussianImageFilter<TInputImage, TOutputImage >  FilterType;
-	typedef itk::BinaryThresholdImageFilter <TInputImage, TOutputImage> ThresholdImageFilterType;
-	typedef itk::InvertIntensityImageFilter<TOutputImage> InvertFilterType;
+	typedef itk::DiscreteGaussianImageFilter<TInputImage, TInputImage >  FilterType;
+	typedef itk::BinaryThresholdImageFilter <TInputImage, TInputImage> ThresholdImageFilterType;
+	typedef itk::InvertIntensityImageFilter<TInputImage> InvertFilterType;
 	typedef itk::BinaryBallStructuringElement<PixelType, 2> StructureFilterType;
-	typedef itk::BinaryMorphologicalOpeningImageFilter<TInputImage, TOutputImage, StructureFilterType> OpeningFilterType;
-	typedef itk::BinaryMorphologicalClosingImageFilter<TInputImage, TOutputImage, StructureFilterType> ClosingFilterType;
+	typedef itk::BinaryMorphologicalOpeningImageFilter<TInputImage, TInputImage, StructureFilterType> OpeningFilterType;
+	typedef itk::BinaryMorphologicalClosingImageFilter<TInputImage, TInputImage, StructureFilterType> ClosingFilterType;
 	
 	typedef typename FilterType::Pointer FilterTypePointer;
 	typedef typename ThresholdImageFilterType::Pointer ThresholdImageFilterTypePointer;

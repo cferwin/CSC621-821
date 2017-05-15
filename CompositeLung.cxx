@@ -40,8 +40,19 @@ void CompositeLung<TInputImage, TOutputImage>::GenerateData() {
 	// Opening
 	openingFilter->SetInput(closingFilter->GetOutput());
 	openingFilter->SetKernel(structureFilter);
+	openingFilter->Update();
 
+    // Convert to output type
+    typedef itk::CastImageFilter< TInputImage, TOutputImage > CastFilterType;
+    CastFilterType::Pointer castFilter = CastFilterType::New();
+    castFilter->SetInput(openingFilter->GetOutput());
+
+    /*
 	openingFilter->GraftOutput(this->GetOutput());
 	openingFilter->Update();
 	this->GraftOutput(openingFilter->GetOutput());
+    */
+	castFilter->GraftOutput(this->GetOutput());
+	castFilter->Update();
+	this->GraftOutput(castFilter->GetOutput());
 }

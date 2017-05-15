@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 PROJECT(LungChangeDetector)
 
 FIND_PACKAGE(ITK REQUIRED)
@@ -15,36 +14,6 @@ ELSE()
     SET(Glue ItkVtkGlue)
 ENDIF()
 
-ADD_EXECUTABLE(LungChangeDetector LungChangeDetector.cxx RegisterOrganFilter.cxx NonlinearRegisterOrganFilter.cxx)
+ADD_EXECUTABLE(LungChangeDetector LungChangeDetector.cxx RegisterOrganFilter.cxx NonlinearRegisterOrganFilter.cxx SegmentLungVolume.cxx)
 
 TARGET_LINK_LIBRARIES(LungChangeDetector ${ITK_LIBRARIES} ${VTK_LIBRARIES} ${Glue})
-=======
-cmake_minimum_required(VERSION 2.8)
- 
-project(SegmentLungs)
- 
-find_package(ITK REQUIRED)
-include(${ITK_USE_FILE})
-
-IF(ITKVtkGlue_LOADED)
-    FIND_PACKAGE(VTK REQUIRED)
-    INCLUDE(${VTK_USE_FILE})
-ELSE()
-    FIND_PACKAGE(ItkVtkGlue REQUIRED)
-    INCLUDE(${ItkVtkGlue_USE_FILE})
-    SET(Glue ItkVtkGlue)
-ENDIF()
- 
-add_executable(SegmentLungs MACOSX_BUNDLE SegmentLungs SegmentLungVolume)
- 
-if( "${ITK_VERSION_MAJOR}" LESS 4 )
-    target_link_libraries(SegmentLungs ITKReview ${ITK_LIBRARIES} ${VTK_LIBRARIES} ${Glue})
-else( "${ITK_VERSION_MAJOR}" LESS 4 )
-<<<<<<< HEAD
-  target_link_libraries(SegmentLungs ${ITK_LIBRARIES})
-endif( "${ITK_VERSION_MAJOR}" LESS 4 )
->>>>>>> Updated file name and gitignore
-=======
-    target_link_libraries(SegmentLungs ${ITK_LIBRARIES} ${VTK_LIBRARIES} ${Glue})
-endif( "${ITK_VERSION_MAJOR}" LESS 4 )
->>>>>>> Fix bugs in segmentation system.

@@ -20,6 +20,8 @@
 #include <itkTranslationTransform.h>
 #include <itkCenteredTransformInitializer.h>
 #include <itkShrinkImageFilter.h>
+#include "SegmentLungVolume.h"
+#include "SegmentLungVolume.cxx"
 
 #define DIMENSION 3
 #define OUT_DIMENSION 3

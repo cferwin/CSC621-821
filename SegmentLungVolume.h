@@ -9,6 +9,8 @@
 #include "itkBinaryBallStructuringElement.h"
 #include "QuickView.h"
 
+#define DIMENSION 3
+
 template<typename TInputImage, typename TOutputImage> 
 class SegmentLungVolume : public itk::ImageToImageFilter<TInputImage, TOutputImage> {
 public: 
@@ -30,14 +32,14 @@ public:
 	void GenerateData();
 	
 protected: 
-	typedef itk::Image< unsigned short, 2 > OutputType;
-	typedef itk::Image< unsigned char, 2 > UnsignedCharImageType;
-	typedef itk::Image< float, 2 >         FloatImageType;
+	typedef itk::Image< unsigned short, DIMENSION > OutputType;
+	typedef itk::Image< unsigned char, DIMENSION > UnsignedCharImageType;
+	typedef itk::Image< float, DIMENSION >         FloatImageType;
 	
 	typedef itk::DiscreteGaussianImageFilter<TInputImage, TInputImage >  FilterType;
 	typedef itk::BinaryThresholdImageFilter <TInputImage, TInputImage> ThresholdImageFilterType;
 	typedef itk::InvertIntensityImageFilter<TInputImage> InvertFilterType;
-	typedef itk::BinaryBallStructuringElement<PixelType, 2> StructureFilterType;
+	typedef itk::BinaryBallStructuringElement<PixelType, DIMENSION> StructureFilterType;
 	typedef itk::BinaryMorphologicalOpeningImageFilter<TInputImage, TInputImage, StructureFilterType> OpeningFilterType;
 	typedef itk::BinaryMorphologicalClosingImageFilter<TInputImage, TInputImage, StructureFilterType> ClosingFilterType;
 	

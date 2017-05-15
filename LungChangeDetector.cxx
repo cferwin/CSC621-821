@@ -22,11 +22,16 @@
 #include <itkShrinkImageFilter.h>
 #include "SegmentLungVolume.h"
 #include "SegmentLungVolume.cxx"
+#include <itkMaskImageFilter.h>
 
 #define DIMENSION 3
 #define OUT_DIMENSION 3
 
 int main(int argc, char **argv) {
+	const int threshold = 410;
+	const double variance = 2.0;
+	const int invertMax = 255;
+
     // Define types
     typedef itk::Image<float, DIMENSION> ImageType;
     typedef itk::ImageSeriesReader<ImageType> ReaderType;
@@ -85,33 +90,58 @@ int main(int argc, char **argv) {
     laterReader->SetFileNames(filePaths);
     laterReader->Update();
 
-    
-
-    // Generate output file paths
-    // TODO: Can clean up if sticking with 3D output images
-    nameGenerator->SetSeriesFormat(argv[7]);
-    nameGenerator->SetStartIndex(1);
-    //nameGenerator->SetEndIndex(std::stoi(argv[3]));
-    nameGenerator->SetEndIndex(1);
-    nameGenerator->SetIncrementIndex(1);
-    filePaths = nameGenerator->GetFileNames();
-
     try {
+        // Segment the lungs in both images
+        SegmentLungVolume<ImageType, ImageType>::Pointer segBaseline = SegmentLungVolume<ImageType, ImageType>::New();
+        segBaseline->SetInput(baselineReader->GetOutput());
+        segBaseline->SetThreshold(threshold);
+        segBaseline->SetVariance(variance);
+        segBaseline->Update();
+
+        SegmentLungVolume<ImageType, ImageType>::Pointer segLater = SegmentLungVolume<ImageType, ImageType>::New();
+        segLater->SetInput(laterReader->GetOutput());
+        segLater->SetThreshold(threshold);
+        segLater->SetVariance(variance);
+        segLater->Update();
+
+        // Mask lungs in each image
+        itk::MaskImageFilter<ImageType, ImageType, ImageType>::Pointer maskBaseline = itk::MaskImageFilter<ImageType, ImageType, ImageType>::New();
+        maskBaseline->SetMaskImage(segBaseline->GetOutput());
+        maskBaseline->SetInput(baselineReader->GetOutput());
+        maskBaseline->SetMaskingValue(0);
+        maskBaseline->Update();
+
+        // Mask lungs in each image
+        itk::MaskImageFilter<ImageType, ImageType, ImageType>::Pointer maskLater = itk::MaskImageFilter<ImageType, ImageType, ImageType>::New();
+        maskLater->SetMaskImage(segLater->GetOutput());
+        maskLater->SetInput(laterReader->GetOutput());
+        maskLater->SetMaskingValue(0);
+        maskLater->Update();
+
         RegisterOrganFilter<ImageType, OutputImageType>::Pointer reg = RegisterOrganFilter<ImageType, OutputImageType>::New();
-        reg->SetFixedImage(baselineReader->GetOutput());
-        reg->SetMovingImage(laterReader->GetOutput());
+        reg->SetFixedImage(maskBaseline->GetOutput());
+        reg->SetMovingImage(maskLater->GetOutput());
         reg->Update();
 
         NonlinearRegisterOrganFilter<ImageType, OutputImageType>::Pointer nonlinearReg = NonlinearRegisterOrganFilter<ImageType, OutputImageType>::New();
-        nonlinearReg->SetFixedImage(baselineReader->GetOutput());
+        nonlinearReg->SetFixedImage(maskBaseline->GetOutput());
         nonlinearReg->SetMovingImage(reg->GetOutput());
         std::cout << "start nonlinear update" << std::endl;
         nonlinearReg->Update();
         std::cout << "nonlinear update done, start writer" << std::endl;
 
+        // Generate output file paths
+        // TODO: Can clean up if sticking with 3D output images
+        nameGenerator->SetSeriesFormat(argv[7]);
+        nameGenerator->SetStartIndex(1);
+        //nameGenerator->SetEndIndex(std::stoi(argv[3]));
+        nameGenerator->SetEndIndex(1);
+        nameGenerator->SetIncrementIndex(1);
+        filePaths = nameGenerator->GetFileNames();
+
         // Write output image
         writer->SetFileNames(filePaths);
-        writer->SetInput(nonlinearReg->GetOutput());
+        writer->SetInput(maskLater->GetOutput());
         std::cout << "writer set up" << std::endl;
         writer->Update();
     }

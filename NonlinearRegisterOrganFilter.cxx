@@ -105,7 +105,7 @@ void NonlinearRegisterOrganFilter<TInputImage, TOutputImage>::GenerateData() {
 
     filter->SetFixedImage( baselineNormalize->GetOutput() );
     filter->SetMovingImage( matcher->GetOutput() );
-    filter->SetNumberOfIterations( 25 );
+    filter->SetNumberOfIterations( 500 );
     filter->SetStandardDeviations( 12.0 );
     cout << "update matching filter" << endl;
     filter->UpdateLargestPossibleRegion();
